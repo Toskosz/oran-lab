@@ -4,19 +4,5 @@ metadata: # kpt-merge: /monitoring
   name: monitoring
   annotations:
     config.kubernetes.io/local-config: "true"
-    internal.kpt.dev/upstream-identifier: 'kpt.dev|Kptfile|default|monitoring'
-upstream:
-  type: git
-  git:
-    repo: https://github.com/Toskosz/oran-stack.git
-    directory: monitoring
-    ref: refactor-nephio
-upstreamLock:
-  type: git
-  git:
-    repo: https://github.com/Toskosz/oran-stack.git
-    directory: monitoring
-    ref: refactor-nephio
-    commit: b4c39545a88e13764bb0db22336e3ecbc9834de8
 info:
   description: Prometheus + Grafana (kube-prometheus-stack) and O-RAN ServiceMonitors.
