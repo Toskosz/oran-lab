@@ -15,13 +15,11 @@
 # init-webui-data.js files, which are already stable and tested.
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/mongodb-init-scripts
+metadata:
   name: mongodb-init-scripts
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|mongodb-init-scripts'
 data:
   init-rs.js: |
     try {
@@ -103,13 +101,11 @@ data:
 # replicating the ./configs:/open5gs/configs:ro bind-mount from docker-compose.
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/open5gs-nf-configs
+metadata:
   name: open5gs-nf-configs
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|open5gs-nf-configs'
 data:
   nrf.yaml: |
     global:
@@ -526,13 +522,11 @@ data:
 # Internal SBI service (HTTP/2) — used by other NFs to reach AMF.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/amf
+metadata:
   name: amf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: amf
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|amf'
 spec:
   selector:
     app: amf
@@ -548,13 +542,11 @@ spec:
 # External SCTP service for N2/NGAP — for real gNBs outside the cluster.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/amf-ngap
+metadata:
   name: amf-ngap
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: amf
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|amf-ngap'
 spec:
   type: NodePort
   externalTrafficPolicy: Local
@@ -569,13 +561,11 @@ spec:
 # Source: 5g-core/templates/deployment-nrf.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/nrf
+metadata:
   name: nrf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: nrf
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|nrf'
 spec:
   selector:
     app: nrf
@@ -587,12 +577,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ausf
+metadata:
   name: ausf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: ausf}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ausf'
 spec:
   selector: {app: ausf}
   ports: [{name: sbi, port: 7777, targetPort: 7777}]
@@ -600,12 +588,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/udm
+metadata:
   name: udm
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: udm}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|udm'
 spec:
   selector: {app: udm}
   ports: [{name: sbi, port: 7777, targetPort: 7777}]
@@ -613,12 +599,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/pcf
+metadata:
   name: pcf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: pcf}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|pcf'
 spec:
   selector: {app: pcf}
   ports:
@@ -628,12 +612,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/nssf
+metadata:
   name: nssf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: nssf}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|nssf'
 spec:
   selector: {app: nssf}
   ports: [{name: sbi, port: 7777, targetPort: 7777}]
@@ -641,12 +623,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/bsf
+metadata:
   name: bsf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: bsf}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|bsf'
 spec:
   selector: {app: bsf}
   ports: [{name: sbi, port: 7777, targetPort: 7777}]
@@ -654,12 +634,10 @@ spec:
 # Source: 5g-core/templates/deployment-sbi-nfs.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/udr
+metadata:
   name: udr
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: udr}
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|udr'
 spec:
   selector: {app: udr}
   ports: [{name: sbi, port: 7777, targetPort: 7777}]
@@ -667,13 +645,11 @@ spec:
 # Source: 5g-core/templates/deployment-scp.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/scp
+metadata:
   name: scp
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: scp
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|scp'
 spec:
   selector:
     app: scp
@@ -685,13 +661,11 @@ spec:
 # Source: 5g-core/templates/deployment-sepp.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/sepp
+metadata:
   name: sepp
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: sepp
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|sepp'
 spec:
   selector:
     app: sepp
@@ -703,13 +677,11 @@ spec:
 # Source: 5g-core/templates/deployment-smf.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/smf
+metadata:
   name: smf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: smf
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|smf'
 spec:
   selector:
     app: smf
@@ -730,13 +702,11 @@ spec:
 # Data-plane GTP-U traffic goes directly node-IP → CU, bypassing kube-proxy.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/upf
+metadata:
   name: upf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: upf
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|upf'
 spec:
   selector:
     app: upf
@@ -756,13 +726,11 @@ spec:
 # Source: 5g-core/templates/deployment-webui.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/webui
+metadata:
   name: webui
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: webui
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|webui'
 spec:
   type: NodePort
   selector:
@@ -779,14 +747,12 @@ spec:
 # 'mongodb' resolves to the pod's IP inside the namespace.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/mongodb
+metadata:
   name: mongodb
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: mongodb
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|mongodb'
 spec:
   clusterIP: None
   selector:
@@ -816,14 +782,12 @@ spec:
 #   automatically when new nodes join the pool (e.g., after auto-repair).
 apiVersion: apps/v1
 kind: DaemonSet
-metadata: # kpt-merge: monitoring/sctp-init
+metadata:
   name: sctp-init
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: sctp-init
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|DaemonSet|monitoring|sctp-init'
 spec:
   selector:
     matchLabels:
@@ -918,14 +882,12 @@ spec:
 # The SCTP kernel module must be loaded first — see daemonset-sctp-init.yaml.
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/amf
+metadata:
   name: amf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: amf
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|amf'
 spec:
   replicas: 1
   strategy:
@@ -1110,14 +1072,12 @@ spec:
 # Depends on MongoDB being ready (initContainer waits for mongo ping).
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/nrf
+metadata:
   name: nrf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: nrf
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|nrf'
 spec:
   replicas: 1
   strategy:
@@ -1289,15 +1249,14 @@ spec:
 #   - Config from the open5gs-nf-configs ConfigMap
 # They are grouped here to avoid repetitive files.
 # ============================================================================
+
 # --- AUSF (Authentication Server Function) -----------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ausf
+metadata:
   name: ausf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: ausf, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ausf'
 spec:
   replicas: 1
   strategy:
@@ -1445,12 +1404,10 @@ spec:
 # --- UDM (Unified Data Management) ------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/udm
+metadata:
   name: udm
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: udm, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|udm'
 spec:
   replicas: 1
   strategy:
@@ -1598,12 +1555,10 @@ spec:
 # --- PCF (Policy Control Function) ------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/pcf
+metadata:
   name: pcf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: pcf, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|pcf'
 spec:
   replicas: 1
   strategy:
@@ -1751,12 +1706,10 @@ spec:
 # --- NSSF (Network Slice Selection Function) ---------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/nssf
+metadata:
   name: nssf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: nssf, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|nssf'
 spec:
   replicas: 1
   strategy:
@@ -1904,12 +1857,10 @@ spec:
 # --- BSF (Binding Support Function) -----------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/bsf
+metadata:
   name: bsf
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: bsf, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|bsf'
 spec:
   replicas: 1
   strategy:
@@ -2057,12 +2008,10 @@ spec:
 # --- UDR (Unified Data Repository) ------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/udr
+metadata:
   name: udr
-  namespace: monitoring
+  namespace: 5g-core
   labels: {app: udr, app.kubernetes.io/part-of: oran-stack}
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|udr'
 spec:
   replicas: 1
   strategy:
@@ -2212,14 +2161,12 @@ spec:
 # ============================================================================
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/scp
+metadata:
   name: scp
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: scp
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|scp'
 spec:
   replicas: 1
   strategy:
@@ -2376,14 +2323,12 @@ spec:
 # ============================================================================
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/sepp
+metadata:
   name: sepp
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: sepp
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|sepp'
 spec:
   replicas: 1
   strategy:
@@ -2540,14 +2485,12 @@ spec:
 # ============================================================================
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/smf
+metadata:
   name: smf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: smf
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|smf'
 spec:
   replicas: 1
   strategy:
@@ -2728,14 +2671,12 @@ spec:
 # network attachment.
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/upf
+metadata:
   name: upf
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: upf
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|upf'
 spec:
   replicas: 1
   strategy:
@@ -2902,14 +2843,12 @@ spec:
 # outside the cluster. Default credentials: admin / 1423 (see TODO.md).
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/webui
+metadata:
   name: webui
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: webui
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|webui'
 spec:
   replicas: 1
   strategy:
@@ -2983,14 +2922,12 @@ spec:
 # resolves to the headless ClusterIP Service below.
 apiVersion: apps/v1
 kind: StatefulSet
-metadata: # kpt-merge: monitoring/mongodb
+metadata:
   name: mongodb
-  namespace: monitoring
+  namespace: 5g-core
   labels:
     app: mongodb
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|StatefulSet|monitoring|mongodb'
 spec:
   serviceName: mongodb # Must match the headless Service name below.
   replicas: 1
