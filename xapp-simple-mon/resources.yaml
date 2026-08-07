@@ -5,8 +5,6 @@ metadata: # kpt-merge: /service-ricxapp-r4-simple-mon-rmr
   name: service-ricxapp-r4-simple-mon-rmr
   labels:
     app: r4-simple-mon
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|default|service-ricxapp-r4-simple-mon-rmr'
 spec:
   publishNotReadyAddresses: true
   selector:
@@ -29,8 +27,6 @@ metadata: # kpt-merge: /service-ricxapp-r4-simple-mon-http
   name: service-ricxapp-r4-simple-mon-http
   labels:
     app: r4-simple-mon
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|default|service-ricxapp-r4-simple-mon-http'
 spec:
   selector:
     app: r4-simple-mon
@@ -49,8 +45,6 @@ metadata: # kpt-merge: /r4-simple-mon
   labels:
     app: r4-simple-mon
     release: r4-simple-mon
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|default|r4-simple-mon'
 spec:
   replicas: 1
   strategy:
