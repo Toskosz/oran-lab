@@ -9,11 +9,9 @@
 # ============================================================================
 apiVersion: v1
 kind: ServiceAccount
-metadata: # kpt-merge: monitoring/ric-e2term
+metadata:
   name: ric-e2term
-  namespace: monitoring
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ServiceAccount|monitoring|ric-e2term'
+  namespace: near-rt-ric
 ---
 # Source: near-rt-ric/templates/configmaps.yaml
 # ============================================================================
@@ -27,16 +25,15 @@ metadata: # kpt-merge: monitoring/ric-e2term
 # correctly in Kubernetes because the Service names in this chart match those
 # hostnames exactly — same as they did in Docker Compose.
 # ============================================================================
+
 # --- e2mgr configuration and routing table -----------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/e2mgr-config
+metadata:
   name: e2mgr-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|e2mgr-config'
 data:
   configuration.yaml: |
     logging:
@@ -96,13 +93,11 @@ data:
 # --- e2term configuration and routing table ----------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/e2term-config
+metadata:
   name: e2term-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|e2term-config'
 data:
   # config.conf: local-ip is the address e2term advertises to e2mgr as its
   # E2T / RMR endpoint. It MUST be the PRIMARY pod IP (Flannel eth0), NOT the
@@ -148,13 +143,11 @@ data:
 # --- rtmgr configuration -----------------------------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/rtmgr-config
+metadata:
   name: rtmgr-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|rtmgr-config'
 data:
   rtmgr-config.yaml: |
     PlatformComponents:
@@ -305,13 +298,11 @@ data:
 # --- submgr configuration ----------------------------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/submgr-config
+metadata:
   name: submgr-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|submgr-config'
 data:
   submgr-config.yaml: |
     "local":
@@ -366,13 +357,11 @@ data:
 # --- appmgr configuration ----------------------------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/appmgr-config
+metadata:
   name: appmgr-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|appmgr-config'
 data:
   appmgr.yaml: |
     "local":
@@ -406,13 +395,11 @@ data:
 # --- a1mediator configuration ------------------------------------------------
 apiVersion: v1
 kind: ConfigMap
-metadata: # kpt-merge: monitoring/a1mediator-config
+metadata:
   name: a1mediator-config
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ConfigMap|monitoring|a1mediator-config'
 data:
   config.yaml: |
     log-level: debug
@@ -427,11 +414,9 @@ data:
 # Source: near-rt-ric/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
-metadata: # kpt-merge: monitoring/ric-e2term-pod-reader
+metadata:
   name: ric-e2term-pod-reader
-  namespace: monitoring
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|Role|monitoring|ric-e2term-pod-reader'
+  namespace: near-rt-ric
 rules:
 - apiGroups: [""]
   resources: ["pods"]
@@ -440,11 +425,9 @@ rules:
 # Source: near-rt-ric/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
-metadata: # kpt-merge: monitoring/ric-e2term-pod-reader
+metadata:
   name: ric-e2term-pod-reader
-  namespace: monitoring
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|RoleBinding|monitoring|ric-e2term-pod-reader'
+  namespace: near-rt-ric
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -452,18 +435,16 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: ric-e2term
-  namespace: monitoring
+  namespace: near-rt-ric
 ---
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-dbaas
+metadata:
   name: ric-dbaas
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-dbaas
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-dbaas'
 spec:
   selector:
     app: ric-dbaas
@@ -475,13 +456,11 @@ spec:
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-e2mgr
+metadata:
   name: ric-e2mgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-e2mgr
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-e2mgr'
 spec:
   selector:
     app: ric-e2mgr
@@ -499,13 +478,11 @@ spec:
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-appmgr
+metadata:
   name: ric-appmgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-appmgr
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-appmgr'
 spec:
   selector:
     app: ric-appmgr
@@ -517,13 +494,11 @@ spec:
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-submgr
+metadata:
   name: ric-submgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-submgr
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-submgr'
 spec:
   selector:
     app: ric-submgr
@@ -544,13 +519,11 @@ spec:
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-rtmgr
+metadata:
   name: ric-rtmgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-rtmgr
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-rtmgr'
 spec:
   selector:
     app: ric-rtmgr
@@ -573,13 +546,11 @@ spec:
 # name; headless makes that name resolve to the Flannel pod IP.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-e2term
+metadata:
   name: ric-e2term
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-e2term
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-e2term'
 spec:
   clusterIP: None
   selector:
@@ -604,13 +575,11 @@ spec:
 # For in-cluster DU pods, the ClusterIP DNS name works directly.
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/e2term
+metadata:
   name: e2term
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-e2term
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|e2term'
 spec:
   type: NodePort
   selector:
@@ -624,13 +593,11 @@ spec:
 # Source: near-rt-ric/templates/deployments.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: monitoring/ric-a1mediator
+metadata:
   name: ric-a1mediator
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-a1mediator
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Service|monitoring|ric-a1mediator'
 spec:
   selector:
     app: ric-a1mediator
@@ -659,17 +626,16 @@ spec:
 # (ric-e2mgr, ric-e2term, etc.) in their RMR routing tables. This works
 # because all pods are in the same namespace and the Service names match.
 # ============================================================================
+
 # --- DBAAS (Redis shared data layer) -----------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-dbaas
+metadata:
   name: ric-dbaas
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-dbaas
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-dbaas'
 spec:
   replicas: 1
   strategy:
@@ -719,14 +685,12 @@ spec:
 # --- E2MGR (E2 Manager) -------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-e2mgr
+metadata:
   name: ric-e2mgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-e2mgr
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-e2mgr'
 spec:
   replicas: 1
   strategy:
@@ -810,14 +774,12 @@ spec:
 # --- APPMGR (Application Manager) -------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-appmgr
+metadata:
   name: ric-appmgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-appmgr
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-appmgr'
 spec:
   replicas: 1
   strategy:
@@ -868,14 +830,12 @@ spec:
 # --- SUBMGR (Subscription Manager) ------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-submgr
+metadata:
   name: ric-submgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-submgr
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-submgr'
 spec:
   replicas: 1
   strategy:
@@ -952,14 +912,12 @@ spec:
 # injected via a custom entrypoint that patches /etc/hosts before exec'ing rtmgr.
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-rtmgr
+metadata:
   name: ric-rtmgr
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-rtmgr
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-rtmgr'
 spec:
   replicas: 1
   strategy:
@@ -1022,7 +980,7 @@ spec:
         # e2term/e2mgr then try to resolve the pod name to ACK route
         # updates, which fails. Force the stable service name instead.
         - name: RMR_SRC_ID
-          value: ric-rtmgr.monitoring
+          value: ric-rtmgr.near-rt-ric
         - name: CFGFILE
           value: /cfg/rtmgr-config.yaml
         - name: RTFILE
@@ -1071,14 +1029,12 @@ spec:
 # replacing the hardcoded 172.22.0.210 from docker-compose.ric.yml.
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-e2term
+metadata:
   name: ric-e2term
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-e2term
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-e2term'
 spec:
   replicas: 1
   strategy:
@@ -1097,7 +1053,7 @@ spec:
           [
             {
               "name": "e2br-net",
-              "namespace": "monitoring",
+              "namespace": "near-rt-ric",
               "ips": ["10.200.3.4/24"]
             }
           ]
@@ -1226,14 +1182,12 @@ spec:
 # --- A1MEDIATOR (A1 Policy Interface) ----------------------------------------
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: monitoring/ric-a1mediator
+metadata:
   name: ric-a1mediator
-  namespace: monitoring
+  namespace: near-rt-ric
   labels:
     app: ric-a1mediator
     app.kubernetes.io/part-of: oran-stack
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'apps|Deployment|monitoring|ric-a1mediator'
 spec:
   replicas: 1
   strategy:
