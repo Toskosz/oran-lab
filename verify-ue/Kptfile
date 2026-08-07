@@ -4,20 +4,5 @@ metadata: # kpt-merge: /verify-ue
   name: verify-ue
   annotations:
     config.kubernetes.io/local-config: "true"
-    internal.kpt.dev/upstream-identifier: 'kpt.dev|Kptfile|default|verify-ue'
-upstream:
-  type: git
-  git:
-    repo: https://github.com/Toskosz/oran-stack.git
-    directory: verify-ue
-    ref: refactor-nephio
-upstreamLock:
-  type: git
-  git:
-    repo: https://github.com/Toskosz/oran-stack.git
-    directory: verify-ue
-    ref: refactor-nephio
-    commit: b4c39545a88e13764bb0db22336e3ecbc9834de8
 info:
-  description: |
-    Gate Job: wait until srsUE sidecar logs show RRC Connected and PDU Session Established. Deploy after ran (and preferably after xapp-simple-mon).
+  description: "Gate Job: wait until srsUE sidecar logs show RRC Connected and PDU Session Established. Deploy after ran (and preferably after xapp-simple-mon).\n"
