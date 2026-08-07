@@ -1,0 +1,22 @@
+apiVersion: kpt.dev/v1
+kind: Kptfile
+metadata: # kpt-merge: /near-rt-ric
+  name: near-rt-ric
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: 'kpt.dev|Kptfile|default|near-rt-ric'
+upstream:
+  type: git
+  git:
+    repo: https://github.com/Toskosz/oran-stack.git
+    directory: near-rt-ric
+    ref: refactor-nephio
+upstreamLock:
+  type: git
+  git:
+    repo: https://github.com/Toskosz/oran-stack.git
+    directory: near-rt-ric
+    ref: refactor-nephio
+    commit: b4c39545a88e13764bb0db22336e3ecbc9834de8
+info:
+  description: O-RAN SC Near-RT RIC platform (e2term e2mgr rtmgr submgr appmgr a1mediator dbaas).
