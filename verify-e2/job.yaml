@@ -3,15 +3,11 @@ kind: ServiceAccount
 metadata: # kpt-merge: oran-verify/verify-e2
   name: verify-e2
   namespace: oran-verify
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ServiceAccount|oran-verify|verify-e2'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata: # kpt-merge: /oran-verify-e2
   name: oran-verify-e2
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|ClusterRole|default|oran-verify-e2'
 rules:
 - apiGroups: [""]
   resources: ["pods", "pods/exec", "pods/log"]
@@ -24,8 +20,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: # kpt-merge: /oran-verify-e2
   name: oran-verify-e2
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|ClusterRoleBinding|default|oran-verify-e2'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -43,8 +37,6 @@ metadata: # kpt-merge: oran-verify/verify-e2
   labels:
     app: verify-e2
     oran.stack/gate: e2
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'batch|Job|oran-verify|verify-e2'
 spec:
   backoffLimit: 1
   ttlSecondsAfterFinished: 86400
@@ -57,7 +49,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: verify
-        image: bitnami/kubectl:1.30
+        image: bitnamilegacy/kubectl:1.30
         imagePullPolicy: IfNotPresent
         env:
         - name: E2_NODE_ID
