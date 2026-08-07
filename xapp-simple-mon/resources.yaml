@@ -1,8 +1,9 @@
 # Source: xapp/templates/service.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: /service-ricxapp-r4-simple-mon-rmr
+metadata:
   name: service-ricxapp-r4-simple-mon-rmr
+  namespace: ricxapp
   labels:
     app: r4-simple-mon
 spec:
@@ -23,8 +24,9 @@ spec:
 # Source: xapp/templates/service.yaml
 apiVersion: v1
 kind: Service
-metadata: # kpt-merge: /service-ricxapp-r4-simple-mon-http
+metadata:
   name: service-ricxapp-r4-simple-mon-http
+  namespace: ricxapp
   labels:
     app: r4-simple-mon
 spec:
@@ -40,8 +42,9 @@ spec:
 # Source: xapp/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
-metadata: # kpt-merge: /r4-simple-mon
+metadata:
   name: r4-simple-mon
+  namespace: ricxapp
   labels:
     app: r4-simple-mon
     release: r4-simple-mon
