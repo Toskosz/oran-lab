@@ -7,8 +7,6 @@ metadata: # kpt-merge: /5g-core
     pod-security.kubernetes.io/warn: privileged
     pod-security.kubernetes.io/audit: privileged
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|5g-core'
 ---
 apiVersion: v1
 kind: Namespace
@@ -19,8 +17,6 @@ metadata: # kpt-merge: /near-rt-ric
     pod-security.kubernetes.io/warn: privileged
     pod-security.kubernetes.io/audit: privileged
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|near-rt-ric'
 ---
 apiVersion: v1
 kind: Namespace
@@ -31,8 +27,6 @@ metadata: # kpt-merge: /ran
     pod-security.kubernetes.io/warn: privileged
     pod-security.kubernetes.io/audit: privileged
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|ran'
 ---
 apiVersion: v1
 kind: Namespace
@@ -43,8 +37,6 @@ metadata: # kpt-merge: /ricxapp
     pod-security.kubernetes.io/warn: privileged
     pod-security.kubernetes.io/audit: privileged
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|ricxapp'
 ---
 apiVersion: v1
 kind: Namespace
@@ -55,8 +47,6 @@ metadata: # kpt-merge: /monitoring
     pod-security.kubernetes.io/warn: baseline
     pod-security.kubernetes.io/audit: baseline
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|monitoring'
 ---
 apiVersion: v1
 kind: Namespace
@@ -67,5 +57,3 @@ metadata: # kpt-merge: /oran-verify
     pod-security.kubernetes.io/warn: baseline
     pod-security.kubernetes.io/audit: baseline
     oran.stack/managed-by: nephio
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|Namespace|default|oran-verify'
