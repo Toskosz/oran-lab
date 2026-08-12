@@ -3,15 +3,11 @@ kind: ServiceAccount
 metadata: # kpt-merge: oran-verify/xapp-lifecycle
   name: xapp-lifecycle
   namespace: oran-verify
-  annotations:
-    internal.kpt.dev/upstream-identifier: '|ServiceAccount|oran-verify|xapp-lifecycle'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata: # kpt-merge: /oran-xapp-lifecycle
   name: oran-xapp-lifecycle
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|ClusterRole|default|oran-xapp-lifecycle'
 rules:
 - apiGroups: [""]
   resources: ["pods", "pods/log"]
@@ -24,8 +20,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: # kpt-merge: /oran-xapp-lifecycle
   name: oran-xapp-lifecycle
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'rbac.authorization.k8s.io|ClusterRoleBinding|default|oran-xapp-lifecycle'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -43,8 +37,6 @@ metadata: # kpt-merge: oran-verify/xapp-lifecycle
   labels:
     app: xapp-lifecycle
     oran.stack/gate: xapp
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'batch|Job|oran-verify|xapp-lifecycle'
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 900
