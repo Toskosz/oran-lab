@@ -142,19 +142,20 @@ spec:
           }
 
           wait_for_a1_attached() {
-            local i logs last_eps
-            echo "Waiting for RTMgr to attach A1Mediator..."
+            local i logs
+            echo "Waiting for RTMgr to attach A1MEDIATOR..."
             for i in $(seq 1 "${WAIT_RETRIES}"); do
               logs="$(rtmgr_logs)"
-              last_eps="$(printf '%s\n' "${logs}" | grep -F 'Endpoints: map[' | tail -1 || true)"
-              if printf '%s\n' "${last_eps}" | grep -Eq 'ric-a1mediator:456[12]'; then
-                echo "A1Mediator attached on ${RTMGR_POD}"
+              # Success is the case-sensitive name lookup. rtmgr only
+              # dumps "Endpoints: map[" when that lookup fails.
+              if printf '%s\n' "${logs}" | grep -Fq 'name: A1MEDIATOR'; then
+                echo "A1MEDIATOR attached on ${RTMGR_POD}"
                 return 0
               fi
-              echo "attempt ${i}/${WAIT_RETRIES}: waiting for A1Mediator wormhole"
+              echo "attempt ${i}/${WAIT_RETRIES}: waiting for A1MEDIATOR wormhole"
               sleep "${WAIT_DELAY}"
             done
-            echo "ERROR: RTMgr did not attach A1Mediator" >&2
+            echo "ERROR: RTMgr did not attach A1MEDIATOR" >&2
             printf '%s\n' "${logs}" >&2
             return 1
           }
