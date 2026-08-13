@@ -160,9 +160,8 @@ data:
       - name: E2MAN
         fqdn: ric-e2mgr
         port: 3801
-      # rtmgr hardcodes a lookup for this name. If it is missing, rtmgr
-      # redistributes a full newrt every ~10s and wipes mse|12050|<subid>.
-      - name: A1Mediator
+      # rtmgr looks up this name case-sensitively as "A1MEDIATOR".
+      - name: A1MEDIATOR
         fqdn: ric-a1mediator
         port: 4562
     PlatformRoutes:
@@ -271,7 +270,7 @@ data:
       - "RIC_E2NODE_CONFIG_UPDATE_FAILURE=12072"
       - "RIC_HEALTH_CHECK_REQ=100"
       - "RIC_HEALTH_CHECK_RESP=101"
-    # A1_POLICY_* stay omitted (no A1 policy traffic in this lab). A1Mediator
+    # A1_POLICY_* stay omitted (no A1 policy traffic in this lab). A1MEDIATOR
     # must still be listed under PlatformComponents: rtmgr looks it up even
     # without those message types, and a miss triggers newrt wipes of 12050.
     local:
@@ -296,7 +295,7 @@ data:
       port: 8088
       timeout: 30
   rt.json: |
-    {"XApps":[],"E2Ts":{},"MeidMap":[],"Pcs":[{"name":"E2TERM","fqdn":"ric-e2term","port":38000},{"name":"SUBMAN","fqdn":"ric-submgr","port":4560},{"name":"E2MAN","fqdn":"ric-e2mgr","port":3801},{"name":"A1Mediator","fqdn":"ric-a1mediator","port":4562}]}
+    {"XApps":[],"E2Ts":{},"MeidMap":[],"Pcs":[{"name":"E2TERM","fqdn":"ric-e2term","port":38000},{"name":"SUBMAN","fqdn":"ric-submgr","port":4560},{"name":"E2MAN","fqdn":"ric-e2mgr","port":3801},{"name":"A1MEDIATOR","fqdn":"ric-a1mediator","port":4562}]}
 ---
 # Source: near-rt-ric/templates/configmaps.yaml
 # --- submgr configuration ----------------------------------------------------
@@ -610,6 +609,7 @@ spec:
   # yields invalid Wormhole IDs from rtmgr (same reason ric-e2term is
   # headless).
   clusterIP: None
+  publishNotReadyAddresses: true
   selector:
     app: ric-a1mediator
   ports:
@@ -972,6 +972,22 @@ spec:
         volumeMounts:
         - name: shared
           mountPath: /shared
+      # RMR wormholes A1 on port 4561. Headless DNS can miss during A1
+      # Recreate; pin the pod IP into /etc/hosts like submgr.
+      - name: resolve-a1-ip
+        image: alpine:3.19
+        command:
+        - sh
+        - -c
+        - |
+          until getent hosts ric-a1mediator > /tmp/out; do
+            echo "waiting for ric-a1mediator DNS..."; sleep 2;
+          done
+          awk '{print $1}' /tmp/out > /shared/a1-ip
+          echo "Resolved ric-a1mediator to: $(cat /shared/a1-ip)"
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
       containers:
       - name: rtmgr
         image: nexus3.o-ran-sc.org:10001/o-ran-sc/ric-plt-rtmgr:0.9.6
@@ -984,6 +1000,8 @@ spec:
         - |
           SUBMGR_IP=$(cat /shared/submgr-ip)
           echo "${SUBMGR_IP}  service-ricplt-submgr-http.ricplt" >> /etc/hosts
+          A1_IP=$(cat /shared/a1-ip)
+          echo "${A1_IP}  ric-a1mediator" >> /etc/hosts
           exec /run_rtmgr.sh
         env:
         - name: RMR_SEED_RT
