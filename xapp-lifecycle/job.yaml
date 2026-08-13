@@ -164,12 +164,24 @@ spec:
           printf '%s\n' "${RTMGR_LOGS}" | grep -Eq \
             "Update Routes to Endpoint: ric-e2term:38000 successful.*Entries:9"
 
-          XAPP_LOGS="$(xapp_logs)"
-          SUBID="$(printf '%s\n' "${XAPP_LOGS}" |
-            grep -Eo 'mapping: .* -> [0-9]+' | awk '{print $NF}' | tail -1 || true)"
+          echo "Waiting for non-zero E2EventInstanceId..."
+          SUBID=""
+          for i in $(seq 1 30); do
+            XAPP_LOGS="$(xapp_logs)"
+            SUBID="$(printf '%s\n' "${XAPP_LOGS}" |
+              grep -Eo 'mapping: .* -> [0-9]+' | awk '{print $NF}' | tail -1 || true)"
+            if [[ -n "${SUBID}" && "${SUBID}" != "0" ]]; then
+              echo "E2EventInstanceId ${SUBID}"
+              break
+            fi
+            echo "attempt ${i}/30: waiting for non-zero instance id"
+            sleep 2
+          done
           if [[ -z "${SUBID}" || "${SUBID}" == "0" ]]; then
             echo "ERROR: non-zero E2EventInstanceId not found" >&2
             printf '%s\n' "${XAPP_LOGS}" >&2
+            kubectl logs -n "${RIC_NS}" deployment/ric-submgr -c submgr \
+              --since=10m 2>/dev/null | tail -30 >&2 || true
             exit 1
           fi
 
