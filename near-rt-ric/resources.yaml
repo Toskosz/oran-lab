@@ -407,13 +407,16 @@ metadata:
 data:
   config.yaml: |
     log-level: debug
-    NAME: ""
+    NAME: "A1Mediator"
     MAX_SIZE: 65534
     THREAD_TYPE: 0
     LOW_LATENCY: false
     FAST_ACK: false
     MAX_RETRY_ON_FAILURE: 1
     PORT: 4562
+  a1mediator.rt: |
+    newrt|start
+    newrt|end
 ---
 # Source: near-rt-ric/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -603,6 +606,10 @@ metadata:
   labels:
     app: ric-a1mediator
 spec:
+  # Headless so RMR wormholes target the pod IP. ClusterIP/kube-proxy
+  # yields invalid Wormhole IDs from rtmgr (same reason ric-e2term is
+  # headless).
+  clusterIP: None
   selector:
     app: ric-a1mediator
   ports:
@@ -612,6 +619,9 @@ spec:
   - name: rmr
     port: 4562
     targetPort: 4562
+  - name: rmr-mgmt
+    port: 4561
+    targetPort: 4561
 ---
 # Source: near-rt-ric/templates/deployments.yaml
 # ============================================================================
@@ -1226,15 +1236,22 @@ spec:
           value: ric-a1mediator
         - name: RMR_RTG_SVC
           value: "ric-rtmgr:4561"
+        - name: RMR_SEED_RT
+          value: /opt/a1-mediator/a1mediator.rt
         ports:
         - containerPort: 10000
           name: http
         - containerPort: 4562
           name: rmr
+        - containerPort: 4561
+          name: rmr-mgmt
         volumeMounts:
         - name: a1mediator-config
           mountPath: /opt/a1-mediator/config.yaml
           subPath: config.yaml
+        - name: a1mediator-config
+          mountPath: /opt/a1-mediator/a1mediator.rt
+          subPath: a1mediator.rt
         resources:
           requests:
             cpu: 100m
