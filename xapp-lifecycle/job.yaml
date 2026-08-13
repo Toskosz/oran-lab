@@ -77,6 +77,8 @@ spec:
           WAIT_DELAY="${WAIT_DELAY:-5}"
           INDICATION_RETRIES="${INDICATION_RETRIES:-10}"
           INDICATION_DELAY="${INDICATION_DELAY:-10}"
+          XAPP_SINCE=""
+          XAPP_RMR="service-ricxapp-${XAPP_DEPLOYMENT}-rmr.${XAPP_NS}:4561"
 
           cleanup() {
             kubectl delete pod xapp-route-keep -n "${XAPP_NS}" \
@@ -97,9 +99,22 @@ spec:
               | tail -1
           }
 
+          xapp_start_time() {
+            kubectl get pods -n "${XAPP_NS}" -l "app=${XAPP_DEPLOYMENT}" \
+              --field-selector=status.phase=Running \
+              --sort-by=.metadata.creationTimestamp \
+              -o jsonpath='{.items[-1:].status.startTime}'
+          }
+
           rtmgr_logs() {
-            kubectl logs -n "${RIC_NS}" "pod/${RTMGR_POD}" -c rtmgr \
-              2>/dev/null || true
+            local since="${1:-}"
+            if [[ -n "${since}" ]]; then
+              kubectl logs -n "${RIC_NS}" "pod/${RTMGR_POD}" -c rtmgr \
+                --since-time="${since}" 2>/dev/null || true
+            else
+              kubectl logs -n "${RIC_NS}" "pod/${RTMGR_POD}" -c rtmgr \
+                2>/dev/null || true
+            fi
           }
 
           wait_for_xapp_log() {
@@ -126,13 +141,31 @@ spec:
             return 1
           }
 
+          wait_for_a1_attached() {
+            local i logs last_eps
+            echo "Waiting for RTMgr to attach A1Mediator..."
+            for i in $(seq 1 "${WAIT_RETRIES}"); do
+              logs="$(rtmgr_logs)"
+              last_eps="$(printf '%s\n' "${logs}" | grep -F 'Endpoints: map[' | tail -1 || true)"
+              if printf '%s\n' "${last_eps}" | grep -Fq 'ric-a1mediator:4562'; then
+                echo "A1Mediator attached on ${RTMGR_POD}"
+                return 0
+              fi
+              echo "attempt ${i}/${WAIT_RETRIES}: waiting for A1Mediator wormhole"
+              sleep "${WAIT_DELAY}"
+            done
+            echo "ERROR: RTMgr did not attach A1Mediator" >&2
+            printf '%s\n' "${logs}" >&2
+            return 1
+          }
+
           wait_for_platform_routes() {
             local i
             echo "Waiting for RTMgr to push platform routes to the xApp..."
             for i in $(seq 1 "${WAIT_RETRIES}"); do
               RTMGR_LOGS="$(rtmgr_logs)"
-              if printf '%s\n' "${RTMGR_LOGS}" | grep -Eq \
-                "Update Routes to Endpoint: service-ricxapp-${XAPP_DEPLOYMENT}-rmr\\.${XAPP_NS}:4561 successful"; then
+              if printf '%s\n' "${RTMGR_LOGS}" | grep -Fq \
+                "Update Routes to Endpoint: ${XAPP_RMR} successful"; then
                 echo "platform routes confirmed on ${RTMGR_POD}"
                 return 0
               fi
@@ -145,16 +178,18 @@ spec:
           }
 
           wait_for_12050_routes() {
-            local i
-            echo "Waiting for RTMgr subscription indication routes..."
+            local i since="${1:-}"
+            echo "Waiting for RTMgr subscription indication routes since ${since:-pod start}..."
             for i in $(seq 1 "${WAIT_RETRIES}"); do
-              RTMGR_LOGS="$(rtmgr_logs)"
+              RTMGR_LOGS="$(rtmgr_logs "${since}")"
               if printf '%s\n' "${RTMGR_LOGS}" | grep -Fq \
                    "RoutingManager->SubManager Add Request Success" \
+                 && printf '%s\n' "${RTMGR_LOGS}" | grep -Fq \
+                   "Update Routes to Endpoint: ${XAPP_RMR} successful" \
                  && printf '%s\n' "${RTMGR_LOGS}" | grep -Eq \
-                   "Update Routes to Endpoint: service-ricxapp-${XAPP_DEPLOYMENT}-rmr\\.${XAPP_NS}:4561 successful.*Entries:9" \
+                   "Update Routes to Endpoint: ${XAPP_RMR} successful.*OK\\(# of Entries:9([^0-9]|$)" \
                  && printf '%s\n' "${RTMGR_LOGS}" | grep -Eq \
-                   "Update Routes to Endpoint: ric-e2term:38000 successful.*Entries:9"; then
+                   "Update Routes to Endpoint: ric-e2term:38000 successful.*OK\\(# of Entries:9([^0-9]|$)"; then
                 echo "12050 routes confirmed on ${RTMGR_POD}"
                 return 0
               fi
@@ -171,6 +206,11 @@ spec:
             kubectl rollout restart deployment/"${XAPP_DEPLOYMENT}" -n "${XAPP_NS}"
             kubectl rollout status deployment/"${XAPP_DEPLOYMENT}" \
               -n "${XAPP_NS}" --timeout=300s
+            XAPP_SINCE="$(xapp_start_time)"
+            if [[ -z "${XAPP_SINCE}" ]]; then
+              XAPP_SINCE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            fi
+            echo "Using xApp startTime ${XAPP_SINCE} (ignore earlier RTMgr logs)"
             wait_for_xapp_log "post-sync AppMgr registration" \
               "appmgr register" "HTTP 201"
             wait_for_xapp_log "E2 subscription" \
@@ -208,27 +248,31 @@ spec:
           fi
           echo "Using RTMgr pod ${RTMGR_POD} (ignore leftover logs from the previous replica)"
 
+          # A1Mediator's RMR wormhole dies with the old RTMgr. If it is
+          # not bounced, RTMgr logs "Platform component not found:
+          # A1Mediator", redistributes newrt, and SubMgr's POST
+          # /handles/xapp-subscription-handle hits context deadline
+          # exceeded (E2EventInstanceId stays 0).
+          echo "Restarting A1Mediator so it reconnects to the new RTMgr..."
+          kubectl rollout restart deployment/ric-a1mediator -n "${RIC_NS}"
+          kubectl rollout status deployment/ric-a1mediator -n "${RIC_NS}" \
+            --timeout=300s
+          wait_for_a1_attached
           wait_for_platform_routes
-          # newrt continues after the first successful push. SubMgr's
-          # POST /handles/xapp-subscription-handle times out if we
-          # subscribe during that window.
-          echo "Waiting 15s for RTMgr newrt to finish..."
-          sleep 15
 
           restart_xapp_and_subscribe
-          wait_for_12050_routes || true
+          wait_for_12050_routes "${XAPP_SINCE}" || true
           wait_for_nonzero_subid || true
 
           if [[ -z "${SUBID:-}" || "${SUBID}" == "0" ]]; then
-            echo "Instance id still 0; RTMgr was likely still in newrt."
-            echo "Restarting xApp once so SubMgr retries against a ready RTMgr..."
+            echo "Instance id still 0; restarting xApp once against attached A1/RTMgr..."
             restart_xapp_and_subscribe
-            wait_for_12050_routes
+            wait_for_12050_routes "${XAPP_SINCE}"
             if ! wait_for_nonzero_subid; then
               echo "ERROR: non-zero E2EventInstanceId not found" >&2
               printf '%s\n' "${XAPP_LOGS}" >&2
               kubectl logs -n "${RIC_NS}" "pod/${RTMGR_POD}" -c rtmgr \
-                --tail=80 >&2 || true
+                --since-time="${XAPP_SINCE}" --tail=80 >&2 || true
               kubectl logs -n "${RIC_NS}" deployment/ric-submgr -c submgr \
                 --since=10m 2>/dev/null | tail -30 >&2 || true
               exit 1
