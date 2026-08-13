@@ -10,7 +10,7 @@ metadata: # kpt-merge: /oran-xapp-lifecycle
   name: oran-xapp-lifecycle
 rules:
 - apiGroups: [""]
-  resources: ["pods", "pods/log"]
+  resources: ["pods", "pods/log", "services"]
   verbs: ["get", "list", "watch", "create", "delete"]
 - apiGroups: ["apps"]
   resources: ["deployments"]
@@ -147,7 +147,7 @@ spec:
             for i in $(seq 1 "${WAIT_RETRIES}"); do
               logs="$(rtmgr_logs)"
               last_eps="$(printf '%s\n' "${logs}" | grep -F 'Endpoints: map[' | tail -1 || true)"
-              if printf '%s\n' "${last_eps}" | grep -Fq 'ric-a1mediator:4562'; then
+              if printf '%s\n' "${last_eps}" | grep -Eq 'ric-a1mediator:456[12]'; then
                 echo "A1Mediator attached on ${RTMGR_POD}"
                 return 0
               fi
@@ -156,6 +156,30 @@ spec:
             done
             echo "ERROR: RTMgr did not attach A1Mediator" >&2
             printf '%s\n' "${logs}" >&2
+            return 1
+          }
+
+          ensure_a1_headless() {
+            local cip i
+            cip="$(kubectl get svc ric-a1mediator -n "${RIC_NS}" \
+              -o jsonpath='{.spec.clusterIP}' 2>/dev/null || true)"
+            if [[ -z "${cip}" || "${cip}" == "None" ]]; then
+              echo "ric-a1mediator Service is headless"
+              return 0
+            fi
+            echo "Recreating ric-a1mediator as headless (was ClusterIP ${cip})"
+            kubectl delete svc ric-a1mediator -n "${RIC_NS}" --ignore-not-found
+            for i in $(seq 1 30); do
+              cip="$(kubectl get svc ric-a1mediator -n "${RIC_NS}" \
+                -o jsonpath='{.spec.clusterIP}' 2>/dev/null || true)"
+              if [[ "${cip}" == "None" ]]; then
+                echo "ric-a1mediator Service is headless"
+                return 0
+              fi
+              sleep 2
+            done
+            echo "ERROR: ric-a1mediator still has clusterIP=${cip:-missing}" >&2
+            echo "Publish near-rt-ric with clusterIP: None, then delete the Service" >&2
             return 1
           }
 
@@ -237,6 +261,8 @@ spec:
 
           echo "Waiting for initial AppMgr registration..."
           wait_for_xapp_log "AppMgr registration" "appmgr register" "HTTP 201"
+
+          ensure_a1_headless
 
           echo "Restarting RTMgr so it reloads xApps from AppMgr..."
           kubectl rollout restart deployment/ric-rtmgr -n "${RIC_NS}"
