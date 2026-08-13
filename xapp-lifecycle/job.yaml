@@ -263,7 +263,14 @@ spec:
           wait_for_xapp_log "AppMgr registration" "appmgr register" "HTTP 201"
 
           ensure_a1_headless
+          echo "Waiting for A1Mediator to be ready before RTMgr restart..."
+          kubectl rollout status deployment/ric-a1mediator -n "${RIC_NS}" \
+            --timeout=300s
 
+          # Restart RTMgr only. Do not bounce A1 afterwards: RTMgr pins
+          # A1's pod IP in /etc/hosts and opens the wormhole once. A1
+          # Recreate makes that IP stale and the wormhole never retries
+          # successfully. rtmgr looks up the endpoint as name A1MEDIATOR.
           echo "Restarting RTMgr so it reloads xApps from AppMgr..."
           kubectl rollout restart deployment/ric-rtmgr -n "${RIC_NS}"
           kubectl rollout status deployment/ric-rtmgr -n "${RIC_NS}" --timeout=300s
@@ -273,16 +280,6 @@ spec:
             exit 1
           fi
           echo "Using RTMgr pod ${RTMGR_POD} (ignore leftover logs from the previous replica)"
-
-          # A1Mediator's RMR wormhole dies with the old RTMgr. If it is
-          # not bounced, RTMgr logs "Platform component not found:
-          # A1Mediator", redistributes newrt, and SubMgr's POST
-          # /handles/xapp-subscription-handle hits context deadline
-          # exceeded (E2EventInstanceId stays 0).
-          echo "Restarting A1Mediator so it reconnects to the new RTMgr..."
-          kubectl rollout restart deployment/ric-a1mediator -n "${RIC_NS}"
-          kubectl rollout status deployment/ric-a1mediator -n "${RIC_NS}" \
-            --timeout=300s
           wait_for_a1_attached
           wait_for_platform_routes
 
