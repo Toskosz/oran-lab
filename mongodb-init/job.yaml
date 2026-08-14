@@ -1,0 +1,215 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: # kpt-merge: 5g-core/mongodb-init
+  name: mongodb-init
+  namespace: 5g-core
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: # kpt-merge: 5g-core/mongodb-init
+  name: mongodb-init
+  namespace: 5g-core
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/exec"]
+  verbs: ["get", "list", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: # kpt-merge: 5g-core/mongodb-init
+  name: mongodb-init
+  namespace: 5g-core
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mongodb-init
+subjects:
+- kind: ServiceAccount
+  name: mongodb-init
+  namespace: 5g-core
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: # kpt-merge: 5g-core/mongodb-init-scripts
+  name: mongodb-init-scripts
+  namespace: 5g-core
+data:
+  mongodb-init-rs.js: |
+    // Idempotent single-member rs0 init. Member host MUST match mongod's
+    // hostname (the StatefulSet pod FQDN). Using the Service name
+    // "mongodb:27017" leaves InvalidReplicaSetConfig after a rebuild/PVC reuse
+    // because the process identity is mongodb-0.mongodb.<ns>.svc.cluster.local.
+    const desiredHost = 'mongodb-0.mongodb.5g-core.svc.cluster.local:27017';
+
+    function desiredConfig(version) {
+      return {
+        _id: 'rs0',
+        version: version,
+        members: [{ _id: 0, host: desiredHost, priority: 1 }]
+      };
+    }
+
+    function currentConfig() {
+      try { return rs.conf(); } catch (e) { return null; }
+    }
+
+    function isPrimary() {
+      try {
+        const status = rs.status();
+        return status.ok === 1 && (status.members || []).some(function (m) {
+          return m.stateStr === 'PRIMARY' && m.health === 1;
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function memberHost(conf) {
+      try { return conf.members[0].host; } catch (e) { return ''; }
+    }
+
+    const conf = currentConfig();
+    if (isPrimary() && memberHost(conf) === desiredHost) {
+      print('already_primary ' + desiredHost);
+      quit(0);
+    }
+
+    try {
+      rs.initiate(desiredConfig(1));
+      print('initialized ' + desiredHost);
+    } catch (e) {
+      print('initiate: ' + e.message);
+      const nextVersion = ((conf && conf.version) || 1) + 1;
+      try {
+        rs.reconfig(desiredConfig(nextVersion), { force: true });
+        print('reconfigured ' + desiredHost + ' version=' + nextVersion);
+      } catch (reconfigErr) {
+        print('reconfig: ' + reconfigErr.message);
+        quit(1);
+      }
+    }
+  mongodb-seed.js: |
+    // Idempotent Open5GS admin + test subscriber seed.
+    const ueImsi = process.env.UE_IMSI;
+    const ueK = process.env.UE_K;
+    const ueOpc = process.env.UE_OPC;
+    const ueApn = process.env.UE_APN;
+    db = db.getSiblingDB('admin');
+    try {
+      const adminResult = db.administrators.updateOne(
+        { username: 'admin' },
+        { $setOnInsert: {
+            username: 'admin',
+            password: '$2a$10$9D3nYrAb.tF.lL.hzjvJJOTxMTtDZdv/mUwvN8OJZBJLwYMrKvEOq',
+            created_at: new Date(), updated_at: new Date()
+        }},
+        { upsert: true }
+      );
+      print(adminResult.upsertedCount === 1 ? 'Admin user initialized' : 'Admin user already exists');
+    } catch (e) { print('Admin: ' + e.message); throw e; }
+
+    db = db.getSiblingDB('open5gs');
+    try {
+      db.subscribers.updateOne(
+        { imsi: ueImsi },
+        { $setOnInsert: {
+            imsi: ueImsi, msisdn: '+82100000001',
+            subscriber_status: 0, network_access_mode: 0,
+            access_restriction_data: 32, subscribed_rau_tau_timer: 12,
+            pdn: [{ apn: ueApn, type: 2, dnn: ueApn, qci: 9,
+              arp: { priority_level: 8, pre_emption_capability: 0, pre_emption_vulnerability: 0 },
+              mbr: { downlink: 1024, uplink: 1024 },
+              ambr: { downlink: 1024000, uplink: 1024000 }
+            }],
+            ambr: { downlink: 1024000, uplink: 1024000 },
+            slice: [{ sst: 1, default: true }],
+            schema_version: 1, created_at: new Date(), updated_at: new Date()
+        }},
+        { upsert: true }
+      );
+      print('5G subscriber seeded: ' + ueImsi);
+    } catch (e) { print('5G subscriber: ' + e.message); throw e; }
+
+    try {
+      db.auths.updateOne(
+        { imsi: ueImsi },
+        { $setOnInsert: {
+            imsi: ueImsi,
+            k: ueK,
+            opc: ueOpc,
+            amf: 32770, sqn: 0, ck: null, ik: null,
+            created_at: new Date(), updated_at: new Date()
+        }},
+        { upsert: true }
+      );
+      print('5G auth seeded');
+    } catch (e) { print('5G auth: ' + e.message); throw e; }
+---
+apiVersion: batch/v1
+kind: Job
+metadata: # kpt-merge: 5g-core/mongodb-init
+  name: mongodb-init
+  namespace: 5g-core
+  labels:
+    app: mongodb-init
+    oran.stack/gate: mongodb
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: mongodb-init
+    spec:
+      serviceAccountName: mongodb-init
+      restartPolicy: OnFailure
+      containers:
+      - name: init
+        image: bitnamilegacy/kubectl:1.30
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: oran-lab-settings
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -euo pipefail
+          NS=5g-core
+          echo "Waiting for mongodb-0 Ready..."
+          kubectl wait --for=condition=Ready pod/mongodb-0 -n "$NS" --timeout=300s
+          echo "Initializing replica set..."
+          kubectl exec -i -n "$NS" mongodb-0 -c mongodb -- \
+            mongosh "mongodb://localhost:27017/?directConnection=true" --quiet < /scripts/mongodb-init-rs.js
+          primary=0
+          for i in $(seq 1 30); do
+            if kubectl exec -n "$NS" mongodb-0 -c mongodb -- \
+              mongosh "mongodb://localhost:27017/?directConnection=true" --quiet --eval \
+              "try { quit(db.hello().isWritablePrimary ? 0 : 1) } catch (e) { quit(1) }"; then
+              primary=1
+              break
+            fi
+            echo "Waiting for PRIMARY ($i/30)..."
+            sleep 2
+          done
+          if [[ "$primary" != "1" ]]; then
+            echo "ERROR: MongoDB replica set did not become PRIMARY" >&2
+            exit 1
+          fi
+          echo "Seeding subscriber..."
+          kubectl exec -i -n "$NS" mongodb-0 -c mongodb -- \
+            env UE_IMSI="$UE_IMSI" UE_K="$UE_K" UE_OPC="$UE_OPC" UE_APN="$UE_APN" \
+            mongosh "mongodb://localhost:27017/?directConnection=true" --quiet < /scripts/mongodb-seed.js
+          COUNT=$(kubectl exec -n "$NS" mongodb-0 -c mongodb -- \
+            mongosh "mongodb://localhost:27017/open5gs?directConnection=true" --quiet --eval \
+            "db.subscribers.countDocuments({imsi:\"$UE_IMSI\"})")
+          test "$COUNT" = "1"
+          echo "MongoDB init OK — subscriber present"
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: scripts
+        configMap:
+          name: mongodb-init-scripts
